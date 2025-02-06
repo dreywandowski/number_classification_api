@@ -10,51 +10,46 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
     exit();
 }
 
-if (isset($_GET['number']) && is_numeric($_GET['number'])) {
+if (!isset($_GET['number']) || trim($_GET['number']) === '') {
+    http_response_code(400);
+    echo json_encode(["error" => true, "number" => ""]);
+    exit();
+}
+
+if (is_numeric($_GET['number'])) {
     $number = intval($_GET['number']);
-
-    $absNumber = abs($number);
-
     $properties = [];
 
-    if ($number < 0) {
-        $response = [
-            "number" => $number,
-            "error" => "Negative numbers are not supported for prime, perfect, or Armstrong checks.",
-        ];
-    } else {
-        if ($absNumber % 2 != 0) $properties[] = "odd";
-        if ($absNumber % 2 == 0) $properties[] = "even";
-        if (is_armstrong($absNumber)) $properties[] = "armstrong";
-        if (is_prime($absNumber)) $properties[] = "prime";
-        if (is_perfect($absNumber)) $properties[] = "perfect";
+    if (is_armstrong($number)) $properties[] = "armstrong";
+    if ($number % 2 != 0) $properties[] = "odd";
+    if ($number % 2 == 0) $properties[] = "even";
 
-        $response = [
-            "number" => $number,
-            "is_prime" => is_prime($absNumber),
-            "is_perfect" => is_perfect($absNumber),
-            "properties" => $properties,
-            "digit_sum" => array_sum(str_split($absNumber)),
-            "fun_fact" => get_fun_fact($absNumber),
-        ];
-    }
+    $response = [
+        "number" => $number,
+        "is_prime" => is_prime($number),
+        "is_perfect" => is_perfect($number),
+        "properties" => $properties,
+        "digit_sum" => array_sum(str_split((string) abs($number))),
+        "fun_fact" => get_fun_fact($number),
+    ];
 
     http_response_code(200);
     echo json_encode($response, JSON_PRETTY_PRINT);
 } else {
     http_response_code(400); 
-    echo json_encode(["number" => "alphabet", "error" => true], JSON_PRETTY_PRINT);
+    echo json_encode(["error" => true, "number" => "abc"], JSON_PRETTY_PRINT);
 }
 
 function is_prime($num) {
-    if ($num < 2) return false;
-    for ($i = 2; $i * $i <= $num; $i++) {
+    if ($num < 2) return false; 
+    for ($i = 2; $i * $i <= abs($num); $i++) { 
         if ($num % $i == 0) return false;
     }
     return true;
 }
 
 function is_perfect($num) {
+    if ($num < 1) return false;
     $sum = 0;
     for ($i = 1; $i < $num; $i++) {
         if ($num % $i == 0) $sum += $i;
@@ -68,9 +63,10 @@ function get_fun_fact($num) {
 }
 
 function is_armstrong($num) {
-    $digits = str_split($num);
+    $absNum = abs($num); 
+    $digits = str_split($absNum);
     $power = count($digits);
     $sum = array_sum(array_map(fn($digit) => pow($digit, $power), $digits));
-    return $sum == $num;
+    return $sum == $absNum;
 }
 ?>
